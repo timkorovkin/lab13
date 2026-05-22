@@ -1,22 +1,36 @@
 import asyncio
 import json
 import logging
-from nats.aio.client import Client as NATS
+import os
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+os.makedirs("logs", exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("logs/orchestrator.log")
+    ]
+)
 logger = logging.getLogger(__name__)
 
+processed_count = 0
+
 async def run():
+    global processed_count
+    from nats.aio.client import Client as NATS
     nc = NATS()
 
-    import os
-nats_url = os.getenv("NATS_URL", "nats://localhost:4222")
-await nc.connect(nats_url)
+    nats_url = os.getenv("NATS_URL", "nats://localhost:4222")
+    await nc.connect(nats_url)
     logger.info("Подключение к NATS успешно")
 
     async def message_handler(msg):
+        global processed_count
         result = json.loads(msg.data.decode())
-        logger.info(f"Получен результат: {result}")
+        processed_count += 1
+        logger.info(f"Получен результат: {result} | Обработано задач: {processed_count}")
 
     await nc.subscribe("resume.parsed", cb=message_handler)
 
@@ -33,8 +47,8 @@ await nc.connect(nats_url)
         await asyncio.sleep(0.5)
 
     await asyncio.sleep(2)
+    logger.info(f"Оркестратор завершил работу. Всего обработано задач: {processed_count}")
     await nc.close()
-    logger.info("Оркестратор завершил работу")
 
 if __name__ == "__main__":
     asyncio.run(run())
