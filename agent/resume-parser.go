@@ -57,7 +57,7 @@ func StartResumeParserAgent(nc *nats.Conn) {
 		fileLogger.Println(line)
 	}
 
-	nc.Subscribe("resume.parse", func(msg *nats.Msg) {
+nc.QueueSubscribe("resume.parse", "resume-workers", func(msg *nats.Msg) {
 		var resume Resume
 		if err := json.Unmarshal(msg.Data, &resume); err != nil {
 			logError(fmt.Sprintf("Ошибка парсинга JSON: %v", err))
