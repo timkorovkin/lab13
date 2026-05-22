@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 async def run():
     nc = NATS()
 
-    await nc.connect("nats://localhost:4222")
+    import os
+nats_url = os.getenv("NATS_URL", "nats://localhost:4222")
+await nc.connect(nats_url)
     logger.info("Подключение к NATS успешно")
 
     async def message_handler(msg):

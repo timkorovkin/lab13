@@ -11,7 +11,10 @@ import (
 )
 
 func main() {
-	natsURL := "nats://localhost:4222"
+	natsURL := os.Getenv("NATS_URL")
+if natsURL == "" {
+    natsURL = "nats://localhost:4222"
+}
 
 	nc, err := nats.Connect(natsURL)
 	if err != nil {

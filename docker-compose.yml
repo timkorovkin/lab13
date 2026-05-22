@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  nats:
+    image: nats:latest
+    container_name: nats-server
+    ports:
+      - "4222:4222"
+    networks:
+      - hr-network
+
+  go-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: go-agent
+    depends_on:
+      - nats
+    environment:
+      - NATS_URL=nats://nats:4222
+    networks:
+      - hr-network
+
+  orchestrator:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile.orchestrator
+    container_name: orchestrator
+    depends_on:
+      - nats
+      - go-agent
+    environment:
+      - NATS_URL=nats://nats:4222
+    networks:
+      - hr-network
+
+networks:
+  hr-network:
+    driver: bridge
